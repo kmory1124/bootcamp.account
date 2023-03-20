@@ -17,14 +17,22 @@ public class AccountServiceImplementation implements AccountService {
     @Autowired
     private AccountRepository accountRepository;
 
+    @Override
     //implementacion para listar todas las cuentas
     public Flux<AccountEntity> ListAll() {
         return accountRepository.findAll();
     }
 
+    @Override
     //implementacion para listar cuentas por numero de cuenta (de uso interno) (no se expondrá en el controller)
     public Mono<AccountEntity>getByAccount(String AccountNumber){
         return accountRepository.findAll().filter(x -> x.getNumberAccount()!=null && x.getNumberAccount().equals(AccountNumber)).next();
+    }
+
+    @Override
+    //implementacion para listar cuentas por numero de DOCUMENTO (de uso interno) (no se expondrá en el controller)
+    public Mono<AccountEntity>getByDocument(String DocumentNumber){
+        return accountRepository.findAll().filter(x -> x.getDocumentNumber()!=null && x.getDocumentNumber().equals(DocumentNumber)).next();
     }
 
     //implementacion para listar todas las cuentas filtrado por numero de cuenta (se añadirá validacion si no existe, arrojar mensaje perosnalizado)
@@ -59,8 +67,10 @@ public class AccountServiceImplementation implements AccountService {
         EntAccount.setComision(0.00); // 0 comision
         EntAccount.setDateCreate(new Date()); //fecha actual
 
-        return getByAccount(EntAccount.getDocumentNumber())
-                .switchIfEmpty(accountRepository.save(EntAccount));
+        //EL FRONT DEBE VALIDAR POR SU LADO CON EL METODO checkClientPersona DE SU
+        //MICROSERVICIO SI EL CLIENTE ES TIPO PERSONAL
+        return  getByAccount(EntAccount.getDocumentNumber())
+                .switchIfEmpty(accountRepository.save(EntAccount)); //no debe tener cuentas creadas
     }
     //export in controller (1)
     //implementacion para registrar cuentas corrientes
@@ -70,8 +80,14 @@ public class AccountServiceImplementation implements AccountService {
         EntAccount.setLimitMoviment(null); //sin limite de movimientos
         EntAccount.setComision(10.00); // 10% comision
         EntAccount.setDateCreate(new Date()); //fecha actual
-        return getByAccount(EntAccount.getDocumentNumber())
-                .switchIfEmpty(accountRepository.save(EntAccount));
+        EntAccount.setTypeAccount("Current");
+
+        //VALIDA SI ES PERSONAL O EMPRESARIAL
+         if (EntAccount.getTypeClient().equals("P"))
+             //si es cuenta personal solo se admite 1 si es empresarial adminte mas de 1
+             return getByDocument(EntAccount.getDocumentNumber()).filter(i->i.getTypeClient().equals("P")).switchIfEmpty(accountRepository.save(EntAccount));
+         else
+             return register(EntAccount);
     }
 
     //implementacion para registrar cuentas plazo fijo
@@ -82,8 +98,11 @@ public class AccountServiceImplementation implements AccountService {
         EntAccount.setComision(0.00); //0 comision
         EntAccount.setDateCreate(new Date()); //fecha actual
         EntAccount.setDatePay(new Date()); //fecha de pago , se implementará posteriormente el aumentarle 1 mes la proxima fecha de pago
+
+        //EL FRONT DEBE VALIDAR POR SU LADO CON EL METODO checkClientPersona DE SU
+        //MICROSERVICIO SI EL CLIENTE ES TIPO PERSONAL
         return getByAccount(EntAccount.getDocumentNumber())
-                .switchIfEmpty(accountRepository.save(EntAccount));
+                .switchIfEmpty(accountRepository.save(EntAccount));//no debe tener cuentas creadas
     }
 
     //implementacion para registrar credito personal
@@ -125,5 +144,13 @@ public class AccountServiceImplementation implements AccountService {
         return getByAccount(EntAccount.getDocumentNumber())
                 .switchIfEmpty(accountRepository.save(EntAccount));
     }
-
+    // valida si el cliente tipo persona puede crear cuenta
+    @Override
+    public Mono<Long> countAccount(String documentNumber)
+    {
+        return accountRepository.findAll().filter(
+                        x -> x.getDocumentNumber() != null
+                                && x.getDocumentNumber().equals(documentNumber))
+                .count();
+    }
 }

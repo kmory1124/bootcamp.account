@@ -25,16 +25,34 @@ public class AccountController {
         return accountService.filterByAccount(accountNumber);
     }
 
+    //List all the account by document Number
+    @GetMapping(value = "/getByDocument/{DocumentNumber}")
+    public Mono<AccountEntity> getByDocument(@PathVariable("DocumentNumber") String DocumentNumber){
+        return accountService.getByDocument(DocumentNumber);
+    }
+
     //Insert new account with not validate
     @PostMapping(value = "/register")
     public Mono<AccountEntity> Save(@RequestBody AccountEntity Aco){
         return accountService.register(Aco);
     }
 
-    //Insert new account with validate
+    //controller expuesto para el registro de cuenta de ahorro
     @PostMapping(value = "/RegisterSaving")
-    public Mono<AccountEntity> registerClient(@RequestBody AccountEntity Aco){
+    public Mono<AccountEntity> registerAccountSaving(@RequestBody AccountEntity Aco){
         return accountService.registerAccountSaving(Aco);
+    }
+
+    //controller expuesto para el registro de cuenta corriente
+    @PostMapping(value = "/registerAccountCurrent")
+    public Mono<AccountEntity> registerAccountCurrent(@RequestBody AccountEntity Aco){
+        return accountService.registerAccountCurrent(Aco);
+    }
+
+    //expone controller para validar cuantas cuentas tiene una persona
+    @GetMapping(value = "/countAccount/{documentNumber}")
+    public Mono<Long> countAccount(@PathVariable("documentNumber") String documentNumber){
+        return accountService.countAccount(documentNumber);
     }
 
 }

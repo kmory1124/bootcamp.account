@@ -23,7 +23,7 @@ public class AccountEntity {
     @Id
     private String id;
     private String numberAccount;
-    private String typeAccount;
+    private String typeAccount; //saving - Current - Deadlines - CreditPersonal -CreditCompany
     private String documentNumber;
     private String description;
     private Integer limitMoviment;
@@ -37,5 +37,6 @@ public class AccountEntity {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private Date datePay;
     private String numberCard;
+    private String typeClient;
 
 }

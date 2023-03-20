@@ -18,6 +18,9 @@ public interface AccountService {
     // se implementará posteriormente por el momento se deja igual que la interfaz anterior.) (se expone en el controller)
     public Mono<AccountEntity> filterByAccount(String AccountNumber);
 
+    //Interfaz para buscar cuentas por documento
+    public Mono<AccountEntity>getByDocument(String DocumentNumber);
+
     //se crea interfaz para realizar validaciones de cuenta, se ingresa la cuenta y debe retornar que tipo de cuenta es.
     // (se terminara posteriormente por falta de tiempo)
     public Mono<AccountEntity> validateCredit(String AccountNumber);
@@ -42,4 +45,7 @@ public interface AccountService {
 
     //se crea interfaz para registrar una nueva tarjeta credito (se expondrá en el controller) (se terminara posteriormente por falta de tiempo)
     public Mono<AccountEntity> registerCreditCard(AccountEntity EntAccount);
+
+    //Valida cantidad de cuentas que tiene un cliente
+    public Mono<Long> countAccount(String documentNumber);
 }
