@@ -49,6 +49,12 @@ public class AccountController {
         return accountService.registerAccountCurrent(Aco);
     }
 
+    //controler expuesto para el registro de cuentas a plazo fijo
+    @PostMapping(value = "/registerAccountPermanentDeadlines")
+    public Mono<AccountEntity> registerAccountPermanentDeadlines(@RequestBody AccountEntity Aco){
+        return accountService.registerAccountPermanentDeadlines(Aco);
+    }
+
     //expone controller para validar cuantas cuentas tiene una persona
     @GetMapping(value = "/countAccount/{documentNumber}")
     public Mono<Long> countAccount(@PathVariable("documentNumber") String documentNumber){

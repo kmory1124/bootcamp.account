@@ -66,11 +66,20 @@ public class AccountServiceImplementation implements AccountService {
         EntAccount.setLimitMoviment(5); // limite maximo de movimientos
         EntAccount.setComision(0.00); // 0 comision
         EntAccount.setDateCreate(new Date()); //fecha actual
+        EntAccount.setTypeAccount("saving");
+        EntAccount.setDescription("Cuenta de ahorros");
 
         //EL FRONT DEBE VALIDAR POR SU LADO CON EL METODO checkClientPersona DE SU
         //MICROSERVICIO SI EL CLIENTE ES TIPO PERSONAL
-        return  getByAccount(EntAccount.getDocumentNumber())
-                .switchIfEmpty(accountRepository.save(EntAccount)); //no debe tener cuentas creadas
+        if (EntAccount.getTypeClient().equals("P"))
+            return  getByDocument(EntAccount.getDocumentNumber()) //valida si existe cuentas para el cliente actual
+                    .filter(i->i.getTypeClient().equals("P")) //si existe se valida si tambien es de tipo personal
+                    .switchIfEmpty( //en caso no exista alguan cuenta para el cliente actual, se procede a registrar
+                            getByAccount(EntAccount.getNumberAccount())//validando que el numero de cuenta a registrar tampoco exista
+                                    .filter(i -> i.getTypeAccount().equals("saving")) // // y si tiene una cuenta que no sea de tipo ahorro
+                                    .switchIfEmpty(accountRepository.save(EntAccount)));
+        else
+            return null;
     }
     //export in controller (1)
     //implementacion para registrar cuentas corrientes
@@ -81,28 +90,50 @@ public class AccountServiceImplementation implements AccountService {
         EntAccount.setComision(10.00); // 10% comision
         EntAccount.setDateCreate(new Date()); //fecha actual
         EntAccount.setTypeAccount("Current");
+        EntAccount.setDescription("Cuenta corriente");
 
+        //EL FRONT DEBE VALIDAR POR SU LADO CON EL METODO checkClientPersona DE SU
+        //MICROSERVICIO SI EL CLIENTE ES TIPO PERSONAL
         //VALIDA SI ES PERSONAL O EMPRESARIAL
          if (EntAccount.getTypeClient().equals("P"))
              //si es cuenta personal solo se admite 1 si es empresarial adminte mas de 1
-             return getByDocument(EntAccount.getDocumentNumber()).filter(i->i.getTypeClient().equals("P")).switchIfEmpty(accountRepository.save(EntAccount));
-         else
-             return register(EntAccount);
+             return getByDocument(EntAccount.getDocumentNumber()) //se valida si el cliente actual tiene alguna cuenta registrada
+                     .filter(i->i.getTypeClient().equals("P"))//en caso tenga alguna cuenta adicional, se valida si es de tipo personal como doble validacion.
+
+                     .switchIfEmpty( //en caso el cliente actual no cuente con alguna cuenta segun lo filtrado en la linea anterior, se procede a registrarla
+                             getByAccount(EntAccount.getNumberAccount()) //se valida tambien que el numero de cuenta a registrar tampoco exista
+                                     .filter(i->i.getTypeAccount().equals("Current")) // y si tiene una cuenta que no sea de tipo cuenta corriente
+                                     .switchIfEmpty(accountRepository.save(EntAccount)));
+         else // si es tipo empresarial se permite registrar mas de una cuenta corriente, validando que no se repita el codigo de cuenta
+             return getByAccount(EntAccount.getNumberAccount())
+                     .switchIfEmpty(accountRepository.save(EntAccount));
     }
 
     //implementacion para registrar cuentas plazo fijo
     //pendiente modificar la fecha de pago (1)
     //se añadira posteriormente la validacion de que las condiciones apliquen dentro de un mismo mes.
     public Mono<AccountEntity> registerAccountPermanentDeadlines(AccountEntity EntAccount) {
-        EntAccount.setLimitMoviment(1); //limite de movimiento
+        EntAccount.setLimitMoviment(1); //limite de movimiento en una fecha especifica del mes
         EntAccount.setComision(0.00); //0 comision
-        EntAccount.setDateCreate(new Date()); //fecha actual
-        EntAccount.setDatePay(new Date()); //fecha de pago , se implementará posteriormente el aumentarle 1 mes la proxima fecha de pago
+        EntAccount.setDateCreate(new Date()); //fecha actual - se considerá la fecha para el movimiento del mes
+        EntAccount.setDatePay(null); //fecha de pago , se implementará posteriormente el aumentarle 1 mes la proxima fecha de pago
+        EntAccount.setTypeAccount("Deadlines");
+        EntAccount.setDescription("Cuenta plazo fijos");
 
-        //EL FRONT DEBE VALIDAR POR SU LADO CON EL METODO checkClientPersona DE SU
-        //MICROSERVICIO SI EL CLIENTE ES TIPO PERSONAL
-        return getByAccount(EntAccount.getDocumentNumber())
-                .switchIfEmpty(accountRepository.save(EntAccount));//no debe tener cuentas creadas
+        //el front debe validar con el metodo checkClientPersona de su microservicio si el cliente es tipo persona
+        if(EntAccount.getTypeClient().equals("P")) //si el cliente es tipo personal registra validando que este no tenga alguna cuenta registrada
+        {
+            return getByDocument(EntAccount.getDocumentNumber()) //valida que no exista una cuenta para un cliente
+                    .filter(i -> i.getTypeClient().equals("P")) //se realiza doble validacion para ver si la cuenta que tiene tambien es de tipo personal
+                              //y si es de tipo cuenta plazo fijo
+                    .switchIfEmpty( //en caso no exista ninguna cuenta se procede a registrar la cuenta.
+                            getByAccount(EntAccount.getNumberAccount()) //validando tambien que el numero de cuenta ingresado tampoco exista
+                                    .filter(i -> i.getTypeAccount().equals("Deadlines")) // y si tiene una cuenta que no sea de tipo plazo fijo
+                                    .switchIfEmpty(accountRepository.save(EntAccount)));
+        }
+        else
+            return null;
+
     }
 
     //implementacion para registrar credito personal

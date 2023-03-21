@@ -12,9 +12,11 @@ http://localhost:8090/Account/ListByAccount/2234567890 (lista por numero de cuen
 
 http://localhost:8090/Account/countAccount/47304033 (muestra cantidad de cuentas x cliente)
 
-http://localhost:8090/Account/RegisterSaving (registra cuenta ahorro valida x1 por cliente persona, pendiente validar q no se cree para empresas)
+http://localhost:8090/Account/RegisterSaving (registra cuenta ahorro valida x1 por cliente persona, no para empresas)
 
-http://localhost:8090/Account/registerAccountCurrent/ (registra cuenta corrientem valida x1 por cliente tipo persona varias x empresa)
+http://localhost:8090/Account/registerAccountCurrent/ (registra cuenta corriente valida x1 por cliente tipo persona varias x empresa)
+
+http://localhost:8090/Account/registerAccountPermanentDeadlines (registra cuenta plazo fijo valida x1 por cliente, no para empresa)
 
 http://localhost:8090/Account/getByDocument/47304033 (muestra cuentas por documento identidad)
 
