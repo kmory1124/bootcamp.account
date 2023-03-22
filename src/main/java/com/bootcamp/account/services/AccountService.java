@@ -48,4 +48,14 @@ public interface AccountService {
 
     //Valida cantidad de cuentas que tiene un cliente
     public Mono<Long> countAccount(String documentNumber);
+
+    //valida si el cliente tiene tarjeta credito
+    public Mono<Boolean> haveCard(String documentNumber);
+
+    //valida si el cliente tiene algun tipo de cuenta o credito
+    public Mono<Boolean> haveAccountType(String documentNumber,String type);
+
+    //interfaz para realziar actualizacion de montos
+    public Mono<AccountEntity> updateAmount(String accountNumber, Double amount);
+
 }

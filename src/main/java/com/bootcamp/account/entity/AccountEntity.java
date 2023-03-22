@@ -39,4 +39,5 @@ public class AccountEntity {
     private String numberCard;
     private String typeClient;
 
+
 }

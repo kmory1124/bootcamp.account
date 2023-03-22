@@ -68,6 +68,9 @@ public class AccountServiceImplementation implements AccountService {
         EntAccount.setDateCreate(new Date()); //fecha actual
         EntAccount.setTypeAccount("saving");
         EntAccount.setDescription("Cuenta de ahorros");
+        EntAccount.setAmount(0.00);
+
+
 
         //EL FRONT DEBE VALIDAR POR SU LADO CON EL METODO checkClientPersona DE SU
         //MICROSERVICIO SI EL CLIENTE ES TIPO PERSONAL
@@ -86,11 +89,13 @@ public class AccountServiceImplementation implements AccountService {
     //se añadira posteriormente la validacion de que las condiciones apliquen dentro de un mismo mes.
     @Override
     public Mono<AccountEntity> registerAccountCurrent(AccountEntity EntAccount) {
-        EntAccount.setLimitMoviment(null); //sin limite de movimientos
+        EntAccount.setLimitMoviment(5); //sin limite de movimientos -> se cambio el limite de movimiento por lo solicitando en la tarea de la semana 2
         EntAccount.setComision(10.00); // 10% comision
         EntAccount.setDateCreate(new Date()); //fecha actual
         EntAccount.setTypeAccount("Current");
         EntAccount.setDescription("Cuenta corriente");
+        EntAccount.setAmount(0.00);
+
 
         //EL FRONT DEBE VALIDAR POR SU LADO CON EL METODO checkClientPersona DE SU
         //MICROSERVICIO SI EL CLIENTE ES TIPO PERSONAL
@@ -99,7 +104,6 @@ public class AccountServiceImplementation implements AccountService {
              //si es cuenta personal solo se admite 1 si es empresarial adminte mas de 1
              return getByDocument(EntAccount.getDocumentNumber()) //se valida si el cliente actual tiene alguna cuenta registrada
                      .filter(i->i.getTypeClient().equals("P"))//en caso tenga alguna cuenta adicional, se valida si es de tipo personal como doble validacion.
-
                      .switchIfEmpty( //en caso el cliente actual no cuente con alguna cuenta segun lo filtrado en la linea anterior, se procede a registrarla
                              getByAccount(EntAccount.getNumberAccount()) //se valida tambien que el numero de cuenta a registrar tampoco exista
                                      .filter(i->i.getTypeAccount().equals("Current")) // y si tiene una cuenta que no sea de tipo cuenta corriente
@@ -119,13 +123,13 @@ public class AccountServiceImplementation implements AccountService {
         EntAccount.setDatePay(null); //fecha de pago , se implementará posteriormente el aumentarle 1 mes la proxima fecha de pago
         EntAccount.setTypeAccount("Deadlines");
         EntAccount.setDescription("Cuenta plazo fijos");
+        EntAccount.setAmount(0.00);
 
         //el front debe validar con el metodo checkClientPersona de su microservicio si el cliente es tipo persona
         if(EntAccount.getTypeClient().equals("P")) //si el cliente es tipo personal registra validando que este no tenga alguna cuenta registrada
         {
             return getByDocument(EntAccount.getDocumentNumber()) //valida que no exista una cuenta para un cliente
                     .filter(i -> i.getTypeClient().equals("P")) //se realiza doble validacion para ver si la cuenta que tiene tambien es de tipo personal
-                              //y si es de tipo cuenta plazo fijo
                     .switchIfEmpty( //en caso no exista ninguna cuenta se procede a registrar la cuenta.
                             getByAccount(EntAccount.getNumberAccount()) //validando tambien que el numero de cuenta ingresado tampoco exista
                                     .filter(i -> i.getTypeAccount().equals("Deadlines")) // y si tiene una cuenta que no sea de tipo plazo fijo
@@ -141,12 +145,26 @@ public class AccountServiceImplementation implements AccountService {
     //solo debe permitir 1 por persona
     @Override
     public Mono<AccountEntity> registerCreditPersonal(AccountEntity EntAccount) {
-        EntAccount.setLimitMoviment(5);
+        EntAccount.setLimitMoviment(null);
         EntAccount.setComision(0.00);
         EntAccount.setDateCreate(new Date());
+        EntAccount.setDatePay(null); //fecha de pago , se implementará posteriormente el aumentarle 1 mes la proxima fecha de pago
+        EntAccount.setTypeAccount("CreditPersonal");
+        EntAccount.setDescription("Credito Personal");
 
-        return getByAccount(EntAccount.getDocumentNumber())
-                .switchIfEmpty(accountRepository.save(EntAccount));
+
+        if(EntAccount.getTypeClient().equals("P")) //si el cliente es tipo personal registra validando que este no tenga alguna cuenta registrada
+        {
+            return getByDocument(EntAccount.getDocumentNumber()) //valida que no exista una cuenta de credito para el cliente
+                    .filter(i -> i.getTypeClient().equals("P")) //se realiza doble validacion para ver si la cuenta de credito que tiene tambien es de tipo personal
+                    .switchIfEmpty( //en caso no exista ninguna cuenta se procede a registrar la cuenta.
+                            getByAccount(EntAccount.getNumberAccount()) //validando tambien que el numero de cuenta para el credito ingresado tampoco exista
+                                    .filter(i -> i.getTypeAccount().equals("CreditPersonal")) // y si tiene un credito persona
+                                    .switchIfEmpty(accountRepository.save(EntAccount)));
+        }
+        else
+            return null;
+
     }
 
     //implementacion para registrar credito empresa
@@ -154,28 +172,40 @@ public class AccountServiceImplementation implements AccountService {
     //debe permitir mas de 1 credito por persona
     @Override
     public Mono<AccountEntity> registerCreditCompany(AccountEntity EntAccount) {
-        EntAccount.setLimitMoviment(5);
+        EntAccount.setLimitMoviment(null);
         EntAccount.setComision(0.00);
         EntAccount.setDateCreate(new Date());
+        EntAccount.setDatePay(null); //fecha de pago , se implementará posteriormente el aumentarle 1 mes la proxima fecha de pago
+        EntAccount.setTypeAccount("CreditCompany");
+        EntAccount.setDescription("Credito Empresarial");
 
-        return getByAccount(EntAccount.getDocumentNumber())
-                .switchIfEmpty(accountRepository.save(EntAccount));
+        if(EntAccount.getTypeClient().equals("C")) //si el cliente es tipo empresarial
+        {
+            return getByAccount(EntAccount.getNumberAccount()) //validando tambien que el numero de cuenta para el credito ingresado tampoco exista
+                                    .filter(i -> i.getTypeAccount().equals("CreditCompany")) // y si tiene un credito persona
+                                    .switchIfEmpty(accountRepository.save(EntAccount));
+        }
+        else
+            return null;
     }
 
     //implementacion para registrar tarjeta de credito
     //se creo la implementación, por falta de tiempo, pendiente realizar el codigo (este pertenece a otra implementación anterior)
     @Override
     public Mono<AccountEntity> registerCreditCard(AccountEntity EntAccount) {
-        EntAccount.setLimitMoviment(5);
+        EntAccount.setLimitMoviment(null);
         EntAccount.setComision(0.00);
         EntAccount.setDateCreate(new Date());
         EntAccount.setNumberAccount(EntAccount.getNumberCard()); // se le asigna el mismo numero de tarjeta a la cuenta  para el filtrado interno.
         EntAccount.setDatePay(new Date());
+        EntAccount.setTypeAccount("CreditCard");
+        EntAccount.setDescription("Tarjeta de credito");
 
-        return getByAccount(EntAccount.getDocumentNumber())
+        return getByAccount(EntAccount.getNumberAccount())
+                //.filter(i -> i.getTypeAccount().equals("CreditCard")) // y si tiene un credito persona
                 .switchIfEmpty(accountRepository.save(EntAccount));
     }
-    // valida si el cliente tipo persona puede crear cuenta
+    // valida cuantas cuentas tiene el cliente
     @Override
     public Mono<Long> countAccount(String documentNumber)
     {
@@ -184,4 +214,37 @@ public class AccountServiceImplementation implements AccountService {
                                 && x.getDocumentNumber().equals(documentNumber))
                 .count();
     }
+
+    // valida si el cliente tiene tarjeta credito, como parte de la validacion para creacion de cuentas clientes VIP
+    @Override
+    public Mono<Boolean> haveCard(String documentNumber)
+    {
+        return accountRepository.findAll().filter(
+                        x -> x.getDocumentNumber() != null
+                                && x.getDocumentNumber().equals(documentNumber)
+                                && x.getTypeAccount().equals("CreditCard"))
+                .hasElements();
+    }
+    // valida si el cliente tiene tarjeta credito, como parte de la validacion para creacion de cuentas clientes VIP
+    @Override
+    public Mono<Boolean> haveAccountType(String documentNumber,String type)
+    {
+        return accountRepository.findAll().filter(
+                        x -> x.getDocumentNumber() != null
+                                && x.getDocumentNumber().equals(documentNumber)
+                                && x.getTypeAccount().equals(type))
+                .hasElements();
+    }
+
+    //implementacion para actualizar los montos de la cuenta.
+    @Override
+    public Mono<AccountEntity> updateAmount(String accountNumber, Double amount){
+        return getByAccount(accountNumber).flatMap(c -> {
+            c.setAmount(amount);
+            c.setDateModify(new Date());
+            return accountRepository.save(c);
+        });
+    }
+
+
 }
