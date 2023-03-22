@@ -37,7 +37,7 @@ http://localhost:8090/Account/updateAmount/2234567890/0 (actualiza montos para l
 ...se tienen mas servicios en el codigo pero aun no estan terminados por falta de tiempo.
 
 
-porcentaje de avance: 50%
+porcentaje de avance: 90%
 
 
 formato json para registrar cuentas:
